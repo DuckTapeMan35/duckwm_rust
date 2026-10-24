@@ -13,13 +13,18 @@ fn main() {
     let src = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../src");
 
     let fds = protox::compile([&proto], [dir]).expect("parse the schema");
-    let api = src.join("api.rs");
-    fs::write(&api, api::generate(&fds)).expect("write src/api.rs");
-    // One method per line comes out long; rustfmt makes it read like the rest.
-    let _ = Command::new("rustfmt")
-        .args(["--edition", "2024"])
-        .arg(&api)
-        .status();
+    for (file, text) in [
+        ("cmd.rs", api::generate_cmd(&fds)),
+        ("api.rs", api::generate_api(&fds)),
+    ] {
+        let path = src.join(file);
+        fs::write(&path, text).expect("write the generated file");
+        // One item per line comes out long; rustfmt makes it read like the rest.
+        let _ = Command::new("rustfmt")
+            .args(["--edition", "2024"])
+            .arg(&path)
+            .status();
+    }
     prost_build::Config::new()
         .out_dir(src.join("proto"))
         .compile_fds(fds)

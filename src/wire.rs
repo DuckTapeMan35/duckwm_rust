@@ -1,9 +1,9 @@
-use std::io::{self, Read, Write};
+use std::io;
 use std::os::unix::fs::MetadataExt;
-use std::os::unix::net::UnixStream;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use prost::Message;
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crate::proto::{ClientMessage, ServerMessage};
 
@@ -24,40 +24,28 @@ pub fn socket_path() -> PathBuf {
     }
 }
 
-/// One connection. Frames are a little-endian u32 length, then the message.
-pub(crate) struct Connection {
-    stream: UnixStream,
+/// One frame: a little-endian u32 length, then the message.
+pub async fn write_frame<W: AsyncWrite + Unpin>(w: &mut W, msg: &ClientMessage) -> io::Result<()> {
+    let body = msg.encode_to_vec();
+    let mut frame = Vec::with_capacity(4 + body.len());
+    frame.extend_from_slice(&(body.len() as u32).to_le_bytes());
+    frame.extend_from_slice(&body);
+    w.write_all(&frame).await
 }
 
-impl Connection {
-    pub fn open(path: &Path) -> io::Result<Self> {
-        Ok(Self {
-            stream: UnixStream::connect(path)?,
-        })
+/// The next frame. UnexpectedEof means duckwm closed the connection.
+pub async fn read_frame<R: AsyncRead + Unpin>(r: &mut R) -> io::Result<ServerMessage> {
+    let mut len = [0u8; 4];
+    r.read_exact(&mut len).await?;
+    let n = u32::from_le_bytes(len) as usize;
+    if n > MAX_FRAME {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("frame of {n} bytes is larger than {MAX_FRAME}"),
+        ));
     }
-
-    pub fn send(&mut self, msg: &ClientMessage) -> io::Result<()> {
-        let body = msg.encode_to_vec();
-        let mut frame = Vec::with_capacity(4 + body.len());
-        frame.extend_from_slice(&(body.len() as u32).to_le_bytes());
-        frame.extend_from_slice(&body);
-        self.stream.write_all(&frame)
-    }
-
-    /// The next message. UnexpectedEof means duckwm closed the connection.
-    pub fn recv(&mut self) -> io::Result<ServerMessage> {
-        let mut len = [0u8; 4];
-        self.stream.read_exact(&mut len)?;
-        let n = u32::from_le_bytes(len) as usize;
-        if n > MAX_FRAME {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("frame of {n} bytes is larger than {MAX_FRAME}"),
-            ));
-        }
-        let mut body = vec![0u8; n];
-        self.stream.read_exact(&mut body)?;
-        ServerMessage::decode(body.as_slice())
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
-    }
+    let mut body = vec![0u8; n];
+    r.read_exact(&mut body).await?;
+    ServerMessage::decode(body.as_slice())
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
