@@ -1,0 +1,10 @@
+[package]
+name = "gen"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+prost-build = "0.14.4"
+prost-types = "0.14.4"
+protox = "0.10"

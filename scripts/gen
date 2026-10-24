@@ -1,0 +1,6 @@
+#!/bin/sh
+# Regenerate the protocol bindings from duckwm's schema (see gen/src/main.rs).
+set -eu
+cd "$(dirname "$0")/.."
+mkdir -p src/proto
+cargo run -q -p gen

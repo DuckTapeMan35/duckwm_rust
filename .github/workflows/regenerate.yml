@@ -1,0 +1,46 @@
+name: Regenerate bindings
+
+on:
+  repository_dispatch:
+    types: [duckwm-proto-changed]   # sent by duckwm's notify workflow
+  workflow_dispatch:                # the "Run workflow" button
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch duckwm
+        if: github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch'
+        uses: actions/checkout@v4
+        with:
+          repository: DuckTapeMan35/duckwm
+          ref: ${{ github.event.client_payload.sha || 'main' }}
+          path: upstream
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Generate
+        if: github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch'
+        run: nix develop --command env DUCKWM_PROTO="$PWD/upstream/proto/duckwm.proto" ./scripts/gen
+
+      - name: Test
+        run: nix develop --command cargo test
+
+      - name: Commit if anything changed
+        if: github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch'
+        run: |
+          if git diff --quiet -- src; then echo "bindings already up to date"; exit 0; fi
+          upstream=$(git -C upstream rev-parse --short HEAD)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add src
+          git commit -m "Regenerate bindings from duckwm $upstream"
+          git push
