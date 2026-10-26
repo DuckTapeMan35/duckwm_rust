@@ -333,6 +333,19 @@ pub fn get_all_windows() -> Cmd {
     Cmd::GetAllWindows(proto::Empty {})
 }
 
+/// `set_name` as a value.
+pub fn set_name(id: u32, name: Option<&str>) -> Cmd {
+    Cmd::SetName(proto::SetName {
+        id,
+        name: name.map(str::to_owned),
+    })
+}
+
+/// `get_name` as a value.
+pub fn get_name(id: u32) -> Cmd {
+    Cmd::GetName(proto::One { id })
+}
+
 /// `screen_width` as a value.
 pub fn screen_width() -> Cmd {
     Cmd::ScreenWidth(proto::Empty {})

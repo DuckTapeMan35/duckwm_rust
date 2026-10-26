@@ -339,6 +339,16 @@ impl Client {
         self.run_one(cmd::get_all_windows()).await
     }
 
+    /// Run `set_name` on its own.
+    pub async fn set_name(&self, id: u32, name: Option<&str>) -> Result<Value> {
+        self.run_one(cmd::set_name(id, name)).await
+    }
+
+    /// Run `get_name` on its own.
+    pub async fn get_name(&self, id: u32) -> Result<Value> {
+        self.run_one(cmd::get_name(id)).await
+    }
+
     /// Run `screen_width` on its own.
     pub async fn screen_width(&self) -> Result<Value> {
         self.run_one(cmd::screen_width()).await
