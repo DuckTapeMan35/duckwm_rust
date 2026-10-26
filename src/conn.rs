@@ -148,6 +148,16 @@ impl State {
                 });
             }
             Some(server_message::Kind::Call(call)) => {
+                // Not set off by our request: a request still in flight crossed
+                // this call on the wire. duckwm runs it inside the call and
+                // answers it first, so it belongs to the new frame now, and
+                // keeps that level busy until its response arrives.
+                if !call.nested {
+                    let depth = self.frames.len();
+                    for (d, _) in self.inflight.iter_mut().filter(|(d, _)| *d == depth) {
+                        *d = depth + 1;
+                    }
+                }
                 self.next_frame += 1;
                 let frame = self.next_frame;
                 self.frames.push(frame);

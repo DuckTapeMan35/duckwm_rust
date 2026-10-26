@@ -194,6 +194,9 @@ pub fn split(
 // ---- order and replies ----
 /// Last time's window order, minus closed windows, plus new ones: a mapped
 /// window goes after the one that was focused, any others at the end.
+///
+/// duckwm calls an arranger with pre_map before map, and the new window is
+/// already in that snapshot: it's placed then, and map finds it in place.
 pub fn track(s: &Snapshot, old: &[u32]) -> Vec<u32> {
     let present: HashSet<u32> = s.windows.iter().copied().collect();
     let mut out: Vec<u32> = old
@@ -205,7 +208,8 @@ pub fn track(s: &Snapshot, old: &[u32]) -> Vec<u32> {
         if out.contains(&w) {
             continue;
         }
-        let after_focused = (s.event == Event::Map && w == s.id)
+        let mapping = matches!(s.event, Event::PreMap | Event::Map);
+        let after_focused = (mapping && w == s.id)
             .then(|| s.prev_id.and_then(|p| out.iter().position(|x| *x == p)))
             .flatten();
         out.insert(after_focused.map_or(out.len(), |i| i + 1), w);
@@ -327,6 +331,17 @@ mod tests {
         let s = snap(Event::Unmap, 2, Some(2), &[1, 2, 3]);
         assert_eq!(s.windows, [1, 3]);
         assert_eq!(track(&s, &[1, 2, 3]), [1, 3]);
+    }
+
+    #[test]
+    fn track_places_a_new_window_at_pre_map() {
+        // duckwm calls pre_map, then map, with the new window in both.
+        let placed = track(&snap(Event::PreMap, 9, Some(1), &[1, 2, 9]), &[1, 2]);
+        assert_eq!(placed, [1, 9, 2]);
+        assert_eq!(
+            track(&snap(Event::Map, 9, Some(1), &[1, 2, 9]), &placed),
+            [1, 9, 2]
+        );
     }
 
     #[test]

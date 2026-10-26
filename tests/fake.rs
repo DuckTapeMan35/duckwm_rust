@@ -63,11 +63,19 @@ impl Fake {
         };
         self.send(server_message::Kind::Response(r)).await;
     }
-
+    /// A call set off by the request being answered, as duckwm marks it.
     async fn call(&mut self, callback: u64, args: proto::call_args::Kind) {
+        self.call_as(callback, args, true).await;
+    }
+
+    async fn call_as(&mut self, callback: u64, args: proto::call_args::Kind, nested: bool) {
         let args = Some(proto::CallArgs { kind: Some(args) });
-        self.send(server_message::Kind::Call(proto::Call { callback, args }))
-            .await;
+        let call = proto::Call {
+            callback,
+            args,
+            nested,
+        };
+        self.send(server_message::Kind::Call(call)).await;
     }
 }
 
@@ -313,4 +321,38 @@ async fn hanging_up_fails_whats_pending() {
     assert!(matches!(pending.await.unwrap(), Err(Error::Closed)));
     wm.closed().await; // returns rather than hanging
     assert!(matches!(wm.get_zoom().await, Err(Error::Closed)));
+}
+
+/// A key press crossing a request on the wire: duckwm runs the request inside
+/// the call and answers it first. The callback's own request must wait for
+/// that answer, or the two responses would go to the wrong requests.
+#[tokio::test]
+async fn a_call_crossing_a_request() {
+    let (wm, mut duck) = pair().await;
+    let cb = wm.register(|wm, _| async move {
+        assert_eq!(wm.get_focused().await?, Value::Int(7));
+        Ok(())
+    });
+
+    let zoom = tokio::spawn({
+        let wm = wm.clone();
+        async move { wm.get_zoom().await }
+    });
+    assert_eq!(
+        duck.request().await,
+        vec![command::Kind::GetZoom(proto::Empty {})]
+    );
+    // The press was already on its way: not nested in get_zoom.
+    duck.call_as(cb.id, proto::call_args::Kind::Key(proto::Empty {}), false)
+        .await;
+    // Give the callback every chance to jump the queue.
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    duck.respond(vec![Value::Num(0.5)]).await;
+    assert_eq!(
+        duck.request().await,
+        vec![command::Kind::GetFocused(proto::Empty {})]
+    );
+    duck.respond(vec![Value::Int(7)]).await;
+    assert_eq!(duck.ret().await.err, None);
+    assert_eq!(zoom.await.unwrap().unwrap(), Value::Num(0.5));
 }

@@ -1000,6 +1000,8 @@ pub struct Call {
     pub callback: u64,
     #[prost(message, optional, tag = "2")]
     pub args: ::core::option::Option<CallArgs>,
+    #[prost(bool, tag = "3")]
+    pub nested: bool,
 }
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct Command {
