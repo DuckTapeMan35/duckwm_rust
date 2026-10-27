@@ -346,6 +346,18 @@ pub fn get_name(id: u32) -> Cmd {
     Cmd::GetName(proto::One { id })
 }
 
+/// `find` as a value.
+pub fn find(path: &str) -> Cmd {
+    Cmd::Find(proto::Find {
+        path: path.to_owned(),
+    })
+}
+
+/// `get_path` as a value.
+pub fn get_path(id: u32) -> Cmd {
+    Cmd::GetPath(proto::One { id })
+}
+
 /// `screen_width` as a value.
 pub fn screen_width() -> Cmd {
     Cmd::ScreenWidth(proto::Empty {})

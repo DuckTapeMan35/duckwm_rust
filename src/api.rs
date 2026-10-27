@@ -349,6 +349,16 @@ impl Client {
         self.run_one(cmd::get_name(id)).await
     }
 
+    /// Run `find` on its own.
+    pub async fn find(&self, path: &str) -> Result<Value> {
+        self.run_one(cmd::find(path)).await
+    }
+
+    /// Run `get_path` on its own.
+    pub async fn get_path(&self, id: u32) -> Result<Value> {
+        self.run_one(cmd::get_path(id)).await
+    }
+
     /// Run `screen_width` on its own.
     pub async fn screen_width(&self) -> Result<Value> {
         self.run_one(cmd::screen_width()).await
