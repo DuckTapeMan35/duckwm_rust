@@ -356,3 +356,90 @@ async fn a_call_crossing_a_request() {
     assert_eq!(duck.ret().await.err, None);
     assert_eq!(zoom.await.unwrap().unwrap(), Value::Num(0.5));
 }
+
+/// The set_scope path a request held, None for everywhere.
+fn scope_of(kinds: &[command::Kind]) -> Option<String> {
+    match &kinds[0] {
+        command::Kind::SetScope(s) => s.path.clone(),
+        other => panic!("expected set_scope, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn within_adds_up_and_puts_the_scope_back() {
+    let (wm, mut duck) = pair().await;
+    let server = tokio::spawn(async move {
+        let mut scopes = vec![];
+        // get_scope, set_scope, the inner pair, get_zoom, then both put back.
+        let nil = Value::Nil;
+        let answers = [
+            nil.clone(),
+            nil.clone(),
+            "web".into(),
+            nil.clone(),
+            1.0.into(),
+            nil.clone(),
+            nil,
+        ];
+        for (i, answer) in answers.into_iter().enumerate() {
+            let kinds = duck.request().await;
+            if [1, 3, 5, 6].contains(&i) {
+                scopes.push(scope_of(&kinds));
+            }
+            duck.respond(vec![answer]).await;
+        }
+        scopes
+    });
+    let zoom = wm
+        .within("web", async || {
+            wm.within("chat", async || wm.get_zoom().await).await
+        })
+        .await
+        .unwrap();
+    assert_eq!(zoom, Value::from(1.0));
+    let scopes = server.await.unwrap();
+    assert_eq!(
+        scopes,
+        [
+            Some("web".into()),
+            Some("web/chat".into()),
+            Some("web".into()),
+            None
+        ]
+    );
+}
+
+#[tokio::test]
+async fn within_puts_the_scope_back_after_an_error() {
+    let (wm, mut duck) = pair().await;
+    let server = tokio::spawn(async move {
+        duck.request().await; // get_scope
+        duck.respond(vec!["DP-1".into()]).await;
+        duck.request().await; // set_scope DP-1/web
+        duck.respond(vec![Value::Nil]).await;
+        let back = scope_of(&duck.request().await);
+        duck.respond(vec![Value::Nil]).await;
+        back
+    });
+    let failed: Result<(), Error> = wm
+        .within("web", async || Err(Error::Unexpected("boom")))
+        .await;
+    assert!(failed.is_err());
+    assert_eq!(server.await.unwrap(), Some("DP-1".into()));
+}
+
+#[tokio::test]
+async fn workspaces_have_their_ids() {
+    let (wm, mut duck) = pair().await;
+    let _server = tokio::spawn(async move {
+        duck.request().await;
+        let ws = Value::Map(vec![
+            ("position".into(), 1i64.into()),
+            ("state".into(), "focused".into()),
+            ("id".into(), 12i64.into()),
+        ]);
+        duck.respond(vec![Value::List(vec![ws])]).await;
+        duck
+    });
+    assert_eq!(wm.get_workspace_states().await.unwrap()[0].id, Some(12));
+}

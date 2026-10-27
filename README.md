@@ -7,39 +7,56 @@ generated from `proto/duckwm.proto` like
 ```toml
 [dependencies]
 duckwm = { git = "https://github.com/DuckTapeMan35/duckwm_rs" }
+tokio = { version = "1", features = ["rt", "macros"] }
 ```
 
 ```rust
-let mut wm = duckwm::Client::connect()?;      // $XDG_RUNTIME_DIR/duckwm.sock
+use duckwm::{Client, cmd};
 
-for combo in wm.get_keybinds()? {
-    println!("{combo}");                      // super+shift+q
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> duckwm::Result<()> {
+    let wm = Client::connect().await?;            // $XDG_RUNTIME_DIR/duckwm.sock
+    for combo in wm.get_keybinds().await? {
+        println!("{combo}");                      // super+shift+q
+    }
+    for ws in wm.get_workspace_states().await? {
+        println!("{} {:?}", ws.position, ws.state); // 1 Focused
+    }
+
+    // Callbacks run inside the transaction that called them.
+    wm.bind("super+u", |wm| async move {
+        println!("focused: {:?}", wm.get_focused().await?);
+        Ok(())
+    })
+    .await?;
+    // Run by duckwm itself: works even while this process is busy.
+    wm.bind_commands("super+Return", [cmd::spawn(&["kitty"])]).await?;
+
+    // Several commands as one transaction.
+    wm.run([cmd::focus(3), cmd::kill_client()]).await?;
+
+    wm.closed().await; // serve the binds until duckwm goes away
+    Ok(())
 }
-for ws in wm.get_workspace_states()? {
-    println!("{} {:?}", ws.position, ws.state); // 1 Focused
-}
-
-// Every command is a method, run on its own...
-wm.focus(3)?;
-wm.spawn(&["kitty"])?;
-
-// ...or several as one transaction: all take effect, or none do.
-use duckwm::{Cmd, proto};
-wm.run([
-    Cmd::Focus(proto::Focus { id: 3 }),
-    Cmd::ToggleFloating(proto::Empty {}),
-])?;
 ```
+
+The client is async, on tokio, and a cheap handle: clone it freely. For a
+whole config, `duckwm::forever(setup)` runs `setup` on every connection and
+waits for duckwm when it's gone (see `examples/config.rs`); `layouts::tile()`
+and `layouts::fair()` are ready-made arrangers, and `tree` and `geometry` build
+your own.
+
+Nodes can be named and found by path: `wm.set_name(id, Some("web"))`,
+`wm.find("DP-1/web")`. `wm.within("web", async || ...).await` makes the
+binds, rules and gaps set up inside apply only there, and puts the scope back
+after, even when the closure fails.
+
+A process running as another user (root, say) connects with
+`Client::connect_to("/run/user/<uid>/duckwm.sock")`.
 
 - The client is blocking; from async code, call it inside `spawn_blocking`.
 - A process running as another user (root, say) connects with
   `Client::connect_to("/run/user/<uid>/duckwm.sock")`.
-- `KeyCombo` parses and prints `super+shift+q` in one canonical order, so a
-  combo from a config file and one from duckwm compare equal.
-- Methods return a `Value`, except the typed `get_keybinds` and
-  `get_workspace_states`. Commands that take a `Callback` (`bind`,
-  `add_rule`, arrangers) need a client that serves callbacks, which this
-  one doesn't yet.
 
 ## Regenerating
 

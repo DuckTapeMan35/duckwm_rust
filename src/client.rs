@@ -79,6 +79,8 @@ pub struct Workspace {
     /// 1-based, at the current level.
     pub position: u32,
     pub state: WorkspaceState,
+    /// Its node id, for set_name; None from a duckwm too old to say.
+    pub id: Option<u32>,
 }
 
 /// Which duckwm this is.
@@ -358,6 +360,10 @@ impl Client {
                     (Some(p), Some(s)) => Ok(Workspace {
                         position: p as u32,
                         state: s,
+                        id: w
+                            .get("id")
+                            .and_then(Value::as_int)
+                            .and_then(|i| u32::try_from(i).ok()),
                     }),
                     _ => Err(Error::Unexpected(
                         "get_workspace_states: expected { position, state }[]",
@@ -365,6 +371,32 @@ impl Client {
                 }
             })
             .collect()
+    }
+
+    // ---- names ----
+    /// Run `f` with the binds, rules and settings it sets up applying only in
+    /// `path` (`"DP-1/web/chat"`); nested, the paths add up. The scope is the
+    /// connection's, and is put back after `f`, even when it fails:
+    ///
+    /// ```ignore
+    /// wm.within("web", async || wm.bind("super+u", on_key).await).await?;
+    /// ```
+    pub async fn within<T, E: From<Error>>(
+        &self,
+        path: &str,
+        f: impl AsyncFnOnce() -> std::result::Result<T, E>,
+    ) -> std::result::Result<T, E> {
+        let outer = self.get_scope().await?.as_str().map(str::to_owned);
+        let full = match &outer {
+            Some(o) => format!("{o}/{path}"),
+            None => path.to_owned(),
+        };
+        self.set_scope(Some(&full)).await?;
+        let out = f().await;
+        let back = self.set_scope(outer.as_deref()).await;
+        let out = out?;
+        back?;
+        Ok(out)
     }
 }
 
