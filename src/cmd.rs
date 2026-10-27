@@ -358,6 +358,18 @@ pub fn get_path(id: u32) -> Cmd {
     Cmd::GetPath(proto::One { id })
 }
 
+/// `set_scope` as a value.
+pub fn set_scope(path: Option<&str>) -> Cmd {
+    Cmd::SetScope(proto::SetScope {
+        path: path.map(str::to_owned),
+    })
+}
+
+/// `get_scope` as a value.
+pub fn get_scope() -> Cmd {
+    Cmd::GetScope(proto::Empty {})
+}
+
 /// `screen_width` as a value.
 pub fn screen_width() -> Cmd {
     Cmd::ScreenWidth(proto::Empty {})

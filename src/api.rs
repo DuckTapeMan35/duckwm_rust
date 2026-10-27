@@ -359,6 +359,16 @@ impl Client {
         self.run_one(cmd::get_path(id)).await
     }
 
+    /// Run `set_scope` on its own.
+    pub async fn set_scope(&self, path: Option<&str>) -> Result<Value> {
+        self.run_one(cmd::set_scope(path)).await
+    }
+
+    /// Run `get_scope` on its own.
+    pub async fn get_scope(&self) -> Result<Value> {
+        self.run_one(cmd::get_scope()).await
+    }
+
     /// Run `screen_width` on its own.
     pub async fn screen_width(&self) -> Result<Value> {
         self.run_one(cmd::screen_width()).await
