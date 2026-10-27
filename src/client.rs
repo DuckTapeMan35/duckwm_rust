@@ -209,6 +209,29 @@ impl Client {
         self.run_one(cmd::add_rule(callback)).await
     }
 
+    /// Be told what changed, once it's committed: f(wm, notice) with the
+    /// topic, the scene serial and the node it's about. duckwm doesn't wait
+    /// for it; the commands it returns run as a request of their own.
+    /// Returns its id, for unsubscribe.
+    pub async fn subscribe<F, Fut, R>(&self, topic: proto::Topic, f: F) -> Result<u32>
+    where
+        F: Fn(Client, proto::Notice) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<R>> + Send + 'static,
+        R: Into<Reply>,
+    {
+        let callback = self.register(move |wm, args| {
+            let notice = match args.kind {
+                Some(call_args::Kind::Notice(n)) => n,
+                _ => proto::Notice::default(),
+            };
+            f(wm, notice)
+        });
+        let id = self.run_one(cmd::subscribe(topic, callback)).await?;
+        id.as_int()
+            .and_then(|i| u32::try_from(i).ok())
+            .ok_or(Error::Unexpected("subscribe: expected an id"))
+    }
+
     /// Open the input bar; f gets the line on Enter.
     pub async fn read_line<F, Fut, R>(
         &self,

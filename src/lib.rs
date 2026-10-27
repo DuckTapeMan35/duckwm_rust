@@ -24,6 +24,7 @@ pub use forever::{forever, forever_at};
 pub use geometry::Rect;
 pub use mods::{KeyCombo, Mods, ParseComboError};
 pub use proto::command::Kind as Cmd;
+pub use proto::{Notice, Topic};
 pub use reply::Reply;
 pub use value::Value;
 pub use wire::socket_path;

@@ -51,6 +51,12 @@ Nodes can be named and found by path: `wm.set_name(id, Some("web"))`,
 binds, rules and gaps set up inside apply only there, and puts the scope back
 after, even when the closure fails.
 
+`wm.subscribe(Topic::Focus, |wm, notice| async move { ... }).await` hears
+about each change once it's committed (`Scene`, `Focus`, `Names`,
+`Outputs`), with the scene serial and the node it's about. duckwm doesn't
+wait for it; the commands it returns run as a request of their own.
+`get_scene()` and `get_layout(id)` say what's there.
+
 A process running as another user (root, say) connects with
 `Client::connect_to("/run/user/<uid>/duckwm.sock")`.
 

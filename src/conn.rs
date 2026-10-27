@@ -163,6 +163,7 @@ impl State {
                 self.frames.push(frame);
                 self.call(frame, call, inner);
             }
+            Some(server_message::Kind::Event(event)) => event_task(event, inner),
             None => {}
         }
     }
@@ -213,6 +214,32 @@ impl State {
             }
         }
     }
+}
+
+/// A subscriber's handler, in a task at the top level: duckwm isn't waiting,
+/// and what it does is requests of its own. The commands its reply holds run
+/// as one; an error is printed, there being no one to give it to.
+fn event_task(event: proto::Event, inner: &Weak<Inner>) {
+    let Some(inner) = inner.upgrade() else {
+        return;
+    };
+    let Some(handler) = inner.handlers.lock().unwrap().get(&event.callback).cloned() else {
+        return;
+    };
+    let client = Client::new(inner, 0);
+    let args = proto::CallArgs {
+        kind: event.notice.map(proto::call_args::Kind::Notice),
+    };
+    tokio::spawn(async move {
+        let result = match handler(client.clone(), args).await {
+            Ok(reply) if !reply.commands.is_empty() => client.run(reply.commands).await.map(drop),
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        };
+        if let Err(e) = result {
+            eprintln!("duckwm: subscriber failed: {e}");
+        }
+    });
 }
 
 async fn run(

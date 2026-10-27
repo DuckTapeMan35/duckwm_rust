@@ -77,6 +77,14 @@ impl Fake {
         };
         self.send(server_message::Kind::Call(call)).await;
     }
+
+    async fn event(&mut self, callback: u64, notice: proto::Notice) {
+        let event = proto::Event {
+            callback,
+            notice: Some(notice),
+        };
+        self.send(server_message::Kind::Event(event)).await;
+    }
 }
 
 /// A connected client and the fake duckwm at the other end.
@@ -442,4 +450,44 @@ async fn workspaces_have_their_ids() {
         duck
     });
     assert_eq!(wm.get_workspace_states().await.unwrap()[0].id, Some(12));
+}
+
+#[tokio::test]
+async fn a_subscriber_gets_its_events_and_answers_nothing() {
+    let (wm, mut duck) = pair().await;
+    let (seen_tx, mut seen) = tokio::sync::mpsc::unbounded_channel();
+    let server = tokio::spawn(async move {
+        let callback = match &duck.request().await[0] {
+            command::Kind::Subscribe(s) => {
+                assert_eq!(s.topic, proto::Topic::Focus as i32);
+                s.callback.unwrap().id
+            }
+            other => panic!("expected subscribe, got {other:?}"),
+        };
+        duck.respond(vec![3i64.into()]).await;
+        let notice = proto::Notice {
+            topic: proto::Topic::Focus as i32,
+            serial: 7,
+            id: Some(4),
+        };
+        duck.event(callback, notice).await;
+        // What the handler returned arrives as a request: no Return.
+        let kinds = duck.request().await;
+        assert!(matches!(kinds[0], command::Kind::GetZoom(_)));
+        duck.respond(vec![1.0.into()]).await;
+        duck
+    });
+    let id = wm
+        .subscribe(proto::Topic::Focus, move |_, notice| {
+            let seen_tx = seen_tx.clone();
+            async move {
+                seen_tx.send((notice.serial, notice.id)).unwrap();
+                Ok(duckwm::Reply::commands([duckwm::cmd::get_zoom()]))
+            }
+        })
+        .await
+        .unwrap();
+    assert_eq!(id, 3);
+    assert_eq!(seen.recv().await, Some((7, Some(4))));
+    let _duck = server.await.unwrap();
 }

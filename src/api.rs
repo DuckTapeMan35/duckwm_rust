@@ -928,8 +928,8 @@ impl Client {
     }
 
     /// Run `get_layout` on its own.
-    pub async fn get_layout(&self) -> Result<Value> {
-        self.run_one(cmd::get_layout()).await
+    pub async fn get_layout(&self, id: Option<u32>) -> Result<Value> {
+        self.run_one(cmd::get_layout(id)).await
     }
 
     /// Run `set_layout` on its own.
@@ -960,6 +960,11 @@ impl Client {
     /// Run `print_graph_pretty` on its own.
     pub async fn print_graph_pretty(&self, cols: Option<u32>, rows: Option<u32>) -> Result<Value> {
         self.run_one(cmd::print_graph_pretty(cols, rows)).await
+    }
+
+    /// Run `get_scene` on its own.
+    pub async fn get_scene(&self) -> Result<Value> {
+        self.run_one(cmd::get_scene()).await
     }
 
     /// Run `get_outputs` on its own.
@@ -1031,5 +1036,10 @@ impl Client {
     /// Run `focus_child` on its own.
     pub async fn focus_child(&self) -> Result<Value> {
         self.run_one(cmd::focus_child()).await
+    }
+
+    /// Run `unsubscribe` on its own.
+    pub async fn unsubscribe(&self, id: u32) -> Result<Value> {
+        self.run_one(cmd::unsubscribe(id)).await
     }
 }

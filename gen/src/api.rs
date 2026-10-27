@@ -17,6 +17,7 @@ const HAND_WRITTEN: &[&str] = &[
     "set_arranger",
     "set_default_arranger",
     "register_arranger",
+    "subscribe",
 ];
 
 struct Command<'a> {

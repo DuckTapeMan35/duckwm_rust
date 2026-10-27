@@ -987,8 +987,8 @@ pub fn eval(source: &str) -> Cmd {
 }
 
 /// `get_layout` as a value.
-pub fn get_layout() -> Cmd {
-    Cmd::GetLayout(proto::Empty {})
+pub fn get_layout(id: Option<u32>) -> Cmd {
+    Cmd::GetLayout(proto::GetLayout { id })
 }
 
 /// `set_layout` as a value.
@@ -1046,6 +1046,11 @@ pub fn set_arranger_index(index: i32) -> Cmd {
 /// `print_graph_pretty` as a value.
 pub fn print_graph_pretty(cols: Option<u32>, rows: Option<u32>) -> Cmd {
     Cmd::PrintGraphPretty(proto::PrintGraphPretty { cols, rows })
+}
+
+/// `get_scene` as a value.
+pub fn get_scene() -> Cmd {
+    Cmd::GetScene(proto::Empty {})
 }
 
 /// `get_outputs` as a value.
@@ -1114,4 +1119,17 @@ pub fn focus_parent() -> Cmd {
 /// `focus_child` as a value.
 pub fn focus_child() -> Cmd {
     Cmd::FocusChild(proto::Empty {})
+}
+
+/// `subscribe` as a value.
+pub fn subscribe(topic: proto::Topic, callback: proto::Callback) -> Cmd {
+    Cmd::Subscribe(proto::Subscribe {
+        topic: topic as i32,
+        callback: Some(callback),
+    })
+}
+
+/// `unsubscribe` as a value.
+pub fn unsubscribe(id: u32) -> Cmd {
+    Cmd::Unsubscribe(proto::Unsubscribe { id })
 }
