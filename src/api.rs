@@ -809,6 +809,11 @@ impl Client {
         self.run_one(cmd::message(text, timeout_ms)).await
     }
 
+    /// Run `set_corner_radius` on its own.
+    pub async fn set_corner_radius(&self, radius: u32) -> Result<Value> {
+        self.run_one(cmd::set_corner_radius(radius)).await
+    }
+
     /// Run `switch_to_workspace` on its own.
     pub async fn switch_to_workspace(&self, index: u32) -> Result<Value> {
         self.run_one(cmd::switch_to_workspace(index)).await

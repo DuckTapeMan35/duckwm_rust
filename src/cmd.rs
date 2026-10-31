@@ -857,6 +857,11 @@ pub fn message(text: &str, timeout_ms: u32) -> Cmd {
     })
 }
 
+/// `set_corner_radius` as a value.
+pub fn set_corner_radius(radius: u32) -> Cmd {
+    Cmd::SetCornerRadius(proto::SetCornerRadius { radius })
+}
+
 /// `switch_to_workspace` as a value.
 pub fn switch_to_workspace(index: u32) -> Cmd {
     Cmd::SwitchToWorkspace(proto::SwitchToWorkspace { index })
