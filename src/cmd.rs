@@ -862,6 +862,18 @@ pub fn set_corner_radius(radius: u32) -> Cmd {
     Cmd::SetCornerRadius(proto::SetCornerRadius { radius })
 }
 
+/// `set_shadow` as a value.
+pub fn set_shadow(blur: u32, spread: i32, x: i32, y: i32, color: u32, unfocused_color: u32) -> Cmd {
+    Cmd::SetShadow(proto::SetShadow {
+        blur,
+        spread,
+        x,
+        y,
+        color,
+        unfocused_color,
+    })
+}
+
 /// `switch_to_workspace` as a value.
 pub fn switch_to_workspace(index: u32) -> Cmd {
     Cmd::SwitchToWorkspace(proto::SwitchToWorkspace { index })

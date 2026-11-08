@@ -814,6 +814,20 @@ impl Client {
         self.run_one(cmd::set_corner_radius(radius)).await
     }
 
+    /// Run `set_shadow` on its own.
+    pub async fn set_shadow(
+        &self,
+        blur: u32,
+        spread: i32,
+        x: i32,
+        y: i32,
+        color: u32,
+        unfocused_color: u32,
+    ) -> Result<Value> {
+        self.run_one(cmd::set_shadow(blur, spread, x, y, color, unfocused_color))
+            .await
+    }
+
     /// Run `switch_to_workspace` on its own.
     pub async fn switch_to_workspace(&self, index: u32) -> Result<Value> {
         self.run_one(cmd::switch_to_workspace(index)).await
