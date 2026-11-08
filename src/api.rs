@@ -828,6 +828,54 @@ impl Client {
             .await
     }
 
+    /// Run `set_blur` on its own.
+    pub async fn set_blur(&self, passes: u32, offset: f64) -> Result<Value> {
+        self.run_one(cmd::set_blur(passes, offset)).await
+    }
+
+    /// Run `set_default_blur` on its own.
+    pub async fn set_default_blur(&self, blur: proto::Blur) -> Result<Value> {
+        self.run_one(cmd::set_default_blur(blur)).await
+    }
+
+    /// Run `set_node_blur` on its own.
+    pub async fn set_node_blur(&self, id: u32, blur: proto::Blur) -> Result<Value> {
+        self.run_one(cmd::set_node_blur(id, blur)).await
+    }
+
+    /// Run `clear_node_blur` on its own.
+    pub async fn clear_node_blur(&self, id: u32) -> Result<Value> {
+        self.run_one(cmd::clear_node_blur(id)).await
+    }
+
+    /// Run `set_node_shadow` on its own.
+    pub async fn set_node_shadow(
+        &self,
+        id: u32,
+        blur: u32,
+        spread: i32,
+        x: i32,
+        y: i32,
+        color: u32,
+        unfocused_color: u32,
+    ) -> Result<Value> {
+        self.run_one(cmd::set_node_shadow(
+            id,
+            blur,
+            spread,
+            x,
+            y,
+            color,
+            unfocused_color,
+        ))
+        .await
+    }
+
+    /// Run `clear_node_shadow` on its own.
+    pub async fn clear_node_shadow(&self, id: u32) -> Result<Value> {
+        self.run_one(cmd::clear_node_shadow(id)).await
+    }
+
     /// Run `switch_to_workspace` on its own.
     pub async fn switch_to_workspace(&self, index: u32) -> Result<Value> {
         self.run_one(cmd::switch_to_workspace(index)).await

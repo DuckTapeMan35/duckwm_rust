@@ -874,6 +874,55 @@ pub fn set_shadow(blur: u32, spread: i32, x: i32, y: i32, color: u32, unfocused_
     })
 }
 
+/// `set_blur` as a value.
+pub fn set_blur(passes: u32, offset: f64) -> Cmd {
+    Cmd::SetBlur(proto::SetBlur { passes, offset })
+}
+
+/// `set_default_blur` as a value.
+pub fn set_default_blur(blur: proto::Blur) -> Cmd {
+    Cmd::SetDefaultBlur(proto::SetDefaultBlur { blur: blur as i32 })
+}
+
+/// `set_node_blur` as a value.
+pub fn set_node_blur(id: u32, blur: proto::Blur) -> Cmd {
+    Cmd::SetNodeBlur(proto::SetNodeBlur {
+        id,
+        blur: blur as i32,
+    })
+}
+
+/// `clear_node_blur` as a value.
+pub fn clear_node_blur(id: u32) -> Cmd {
+    Cmd::ClearNodeBlur(proto::One { id })
+}
+
+/// `set_node_shadow` as a value.
+pub fn set_node_shadow(
+    id: u32,
+    blur: u32,
+    spread: i32,
+    x: i32,
+    y: i32,
+    color: u32,
+    unfocused_color: u32,
+) -> Cmd {
+    Cmd::SetNodeShadow(proto::SetNodeShadow {
+        id,
+        blur,
+        spread,
+        x,
+        y,
+        color,
+        unfocused_color,
+    })
+}
+
+/// `clear_node_shadow` as a value.
+pub fn clear_node_shadow(id: u32) -> Cmd {
+    Cmd::ClearNodeShadow(proto::One { id })
+}
+
 /// `switch_to_workspace` as a value.
 pub fn switch_to_workspace(index: u32) -> Cmd {
     Cmd::SwitchToWorkspace(proto::SwitchToWorkspace { index })
