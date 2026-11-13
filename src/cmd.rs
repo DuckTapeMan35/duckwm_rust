@@ -923,6 +923,36 @@ pub fn clear_node_shadow(id: u32) -> Cmd {
     Cmd::ClearNodeShadow(proto::One { id })
 }
 
+/// `get_layer_namespace` as a value.
+pub fn get_layer_namespace(id: u32) -> Cmd {
+    Cmd::GetLayerNamespace(proto::One { id })
+}
+
+/// `set_layer_corners` as a value.
+pub fn set_layer_corners(id: u32, radius: u32) -> Cmd {
+    Cmd::SetLayerCorners(proto::SetLayerCorners { id, radius })
+}
+
+/// `set_layer_shadow` as a value.
+pub fn set_layer_shadow(id: u32, blur: u32, spread: i32, x: i32, y: i32, color: u32) -> Cmd {
+    Cmd::SetLayerShadow(proto::SetLayerShadow {
+        id,
+        blur,
+        spread,
+        x,
+        y,
+        color,
+    })
+}
+
+/// `set_layer_blur` as a value.
+pub fn set_layer_blur(id: u32, blur: proto::Blur) -> Cmd {
+    Cmd::SetLayerBlur(proto::SetLayerBlur {
+        id,
+        blur: blur as i32,
+    })
+}
+
 /// `switch_to_workspace` as a value.
 pub fn switch_to_workspace(index: u32) -> Cmd {
     Cmd::SwitchToWorkspace(proto::SwitchToWorkspace { index })

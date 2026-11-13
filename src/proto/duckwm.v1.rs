@@ -690,6 +690,35 @@ pub struct SetNodeShadow {
     pub unfocused_color: u32,
 }
 #[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SetLayerCorners {
+    #[prost(uint32, tag = "1")]
+    pub id: u32,
+    #[prost(uint32, tag = "2")]
+    pub radius: u32,
+}
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SetLayerShadow {
+    #[prost(uint32, tag = "1")]
+    pub id: u32,
+    #[prost(uint32, tag = "2")]
+    pub blur: u32,
+    #[prost(sint32, tag = "3")]
+    pub spread: i32,
+    #[prost(sint32, tag = "4")]
+    pub x: i32,
+    #[prost(sint32, tag = "5")]
+    pub y: i32,
+    #[prost(uint32, tag = "6")]
+    pub color: u32,
+}
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
+pub struct SetLayerBlur {
+    #[prost(uint32, tag = "1")]
+    pub id: u32,
+    #[prost(enumeration = "Blur", tag = "2")]
+    pub blur: i32,
+}
+#[derive(Clone, Copy, PartialEq, Eq, Hash, ::prost::Message)]
 pub struct SwitchToWorkspace {
     #[prost(uint32, tag = "1")]
     pub index: u32,
@@ -1117,7 +1146,7 @@ pub struct Event {
 pub struct Command {
     #[prost(
         oneof = "command::Kind",
-        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 700, 701, 702, 703, 704, 705, 706, 707, 708, 709, 710, 711, 712, 713, 714, 715, 716, 717, 800, 801, 802, 803, 804, 805, 900, 901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 1000, 1001, 1002, 1003, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1200, 1201"
+        tags = "1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412, 413, 414, 415, 416, 500, 501, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 515, 516, 517, 518, 519, 520, 521, 600, 601, 602, 603, 604, 605, 606, 607, 608, 609, 610, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621, 622, 623, 624, 625, 626, 627, 628, 629, 630, 631, 632, 633, 634, 635, 636, 637, 700, 701, 702, 703, 704, 705, 706, 707, 708, 709, 710, 711, 712, 713, 714, 715, 716, 717, 800, 801, 802, 803, 804, 805, 900, 901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 1000, 1001, 1002, 1003, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107, 1108, 1200, 1201"
     )]
     pub kind: ::core::option::Option<command::Kind>,
 }
@@ -1437,6 +1466,14 @@ pub mod command {
         SetNodeShadow(super::SetNodeShadow),
         #[prost(message, tag = "633")]
         ClearNodeShadow(super::One),
+        #[prost(message, tag = "634")]
+        GetLayerNamespace(super::One),
+        #[prost(message, tag = "635")]
+        SetLayerCorners(super::SetLayerCorners),
+        #[prost(message, tag = "636")]
+        SetLayerShadow(super::SetLayerShadow),
+        #[prost(message, tag = "637")]
+        SetLayerBlur(super::SetLayerBlur),
         #[prost(message, tag = "700")]
         SwitchToWorkspace(super::SwitchToWorkspace),
         #[prost(message, tag = "701")]

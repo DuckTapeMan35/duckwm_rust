@@ -876,6 +876,35 @@ impl Client {
         self.run_one(cmd::clear_node_shadow(id)).await
     }
 
+    /// Run `get_layer_namespace` on its own.
+    pub async fn get_layer_namespace(&self, id: u32) -> Result<Value> {
+        self.run_one(cmd::get_layer_namespace(id)).await
+    }
+
+    /// Run `set_layer_corners` on its own.
+    pub async fn set_layer_corners(&self, id: u32, radius: u32) -> Result<Value> {
+        self.run_one(cmd::set_layer_corners(id, radius)).await
+    }
+
+    /// Run `set_layer_shadow` on its own.
+    pub async fn set_layer_shadow(
+        &self,
+        id: u32,
+        blur: u32,
+        spread: i32,
+        x: i32,
+        y: i32,
+        color: u32,
+    ) -> Result<Value> {
+        self.run_one(cmd::set_layer_shadow(id, blur, spread, x, y, color))
+            .await
+    }
+
+    /// Run `set_layer_blur` on its own.
+    pub async fn set_layer_blur(&self, id: u32, blur: proto::Blur) -> Result<Value> {
+        self.run_one(cmd::set_layer_blur(id, blur)).await
+    }
+
     /// Run `switch_to_workspace` on its own.
     pub async fn switch_to_workspace(&self, index: u32) -> Result<Value> {
         self.run_one(cmd::switch_to_workspace(index)).await
